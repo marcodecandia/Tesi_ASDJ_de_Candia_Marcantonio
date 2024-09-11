@@ -1,6 +1,8 @@
 import spacy
 import numpy as np
 from Tesi_ASDJ.src.load_file import load_file_jsonl
+import os
+from scipy.sparse import lil_matrix
 
 # Carico il modello di Spacy (lingua inglese small)
 nlp = spacy.load("en_core_web_sm")
@@ -16,10 +18,8 @@ def one_hot_encoder(file):
     # Filtro i token, rimuovo le stop words e la punteggiatura
     filtered_tokens = [token.text for token in doc if not token.is_stop and not token.is_punct]
 
-
     # Creo il vocabolario ordinato, prendendo ogni token una sola volta (set)
     vocabulary = sorted(set(filtered_tokens))
-
 
     # Inizializo la matrice one-hot
     # (inizializzo come una matrice nulla)
@@ -29,8 +29,6 @@ def one_hot_encoder(file):
     for i, token in enumerate(filtered_tokens):
         token_index = vocabulary.index(token)
         matrix[i, token_index] = 1
-
-
 
     return matrix, vocabulary
 
@@ -42,4 +40,51 @@ def one_hot_encoder(file):
 #print(text_ent)
 
 
+def one_hot_encoder_txt(text_raw):
+    doc = nlp(text_raw)
 
+    filtered_tokens = [token.text for token in doc if not token.is_punct and not token.is_stop]
+    vocabulary = sorted(set(filtered_tokens))
+
+    matrix = np.zeros((len(filtered_tokens), len(vocabulary)))
+    for i, token in enumerate(filtered_tokens):
+        token_index = vocabulary.index(token)
+        matrix[i, token_index] = 1
+    print("lunghezza vocabulary: " + str(len(vocabulary)))
+    print("lunghezza filtered tokens: " + str(len(filtered_tokens)))
+
+    for i, word in enumerate(vocabulary):
+        print(f'Parola: {word}, Vettore: {matrix[i]}')
+
+    return matrix, vocabulary
+
+
+def one_hot_encoder_large_txt(text_raw):
+
+    #Divido la stringa di input in chunk di lunghezza 500k caratteri
+    chunk_size = 500000
+    chunks = [text_raw[i:i + chunk_size] for i in range(0, len(text_raw), chunk_size)]
+
+    #Inizializzo la lista dei token filtrati
+    filtered_tokens = []
+
+    #Processo un chunk alla volta e aggiungo volta per volta i token filtrati alla lista
+    for chunk in chunks:
+        doc = nlp(chunk)
+        filtered_tokens_chunk = [token.text for token in doc if not token.is_punct and not token.is_stop]
+        filtered_tokens.extend(filtered_tokens_chunk)
+
+
+    #Creo un vocabolario ordinando e prendendo una sola volta i token filtrati
+    vocabulary = sorted(set(filtered_tokens))
+
+    #Inizializzo una matrice sparsa
+    matrix = lil_matrix((len(filtered_tokens), len(vocabulary)))
+    for i, token in enumerate(filtered_tokens):
+        token_index = vocabulary.index(token)
+        matrix[i, token_index] = 1
+    print(f"lunghezza vocabulary: {len(vocabulary)} ")
+    print(f"lunghezza filtered tokens: {len(filtered_tokens)}")
+
+
+    return matrix, vocabulary

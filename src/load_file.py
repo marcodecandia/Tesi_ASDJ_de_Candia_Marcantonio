@@ -16,6 +16,18 @@ def load_file_jsonl(file):
 
     return data
 
+def load_file_txt(file_path):
+
+    try:
+        with open(file_path, 'r') as file_open:
+            text_str = str(file_open.read())
+    except FileNotFoundError:
+        print(f'File {file_path} non trovato')
+    except Exception as e:
+        print(f'Errore durante la lettura: {e}')
+
+    return text_str
+
 
 #Esempio per vedeer se effettivamente mi restituisce una stringa
 #file = load_file_jsonl('../../Include/data/movies/movies_union_human_perf.jsonl')

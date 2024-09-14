@@ -1,6 +1,6 @@
 import spacy
 import numpy as np
-from Tesi_ASDJ.src.load_file import load_file_jsonl
+from Tesi_ASDJ.src.load_file import load_file_jsonl, load_file_txt, load_directory_txt
 import os
 from scipy.sparse import lil_matrix
 
@@ -60,7 +60,6 @@ def one_hot_encoder_txt(text_raw):
 
 
 def one_hot_encoder_large_txt(text_raw):
-
     #Divido la stringa di input in chunk di lunghezza 500k caratteri
     chunk_size = 500000
     chunks = [text_raw[i:i + chunk_size] for i in range(0, len(text_raw), chunk_size)]
@@ -74,7 +73,6 @@ def one_hot_encoder_large_txt(text_raw):
         filtered_tokens_chunk = [token.text for token in doc if not token.is_punct and not token.is_stop]
         filtered_tokens.extend(filtered_tokens_chunk)
 
-
     #Creo un vocabolario ordinando e prendendo una sola volta i token filtrati
     vocabulary = sorted(set(filtered_tokens))
 
@@ -85,6 +83,50 @@ def one_hot_encoder_large_txt(text_raw):
         matrix[i, token_index] = 1
     print(f"lunghezza vocabulary: {len(vocabulary)} ")
     print(f"lunghezza filtered tokens: {len(filtered_tokens)}")
+    print(f'Parole: {vocabulary}')
 
+    return matrix, vocabulary
+
+
+def one_hot_encoder_large_txt_only_vocabulary(text_raw):
+    #Divido la stringa di input in chunk di lunghezza 500k caratteri
+    chunk_size = 500000
+    chunks = [text_raw[i:i + chunk_size] for i in range(0, len(text_raw), chunk_size)]
+
+    #Inizializzo la lista dei token filtrati
+    filtered_tokens = []
+
+    #Processo un chunk alla volta e aggiungo volta per volta i token filtrati alla lista
+    for chunk in chunks:
+        doc = nlp(chunk)
+        filtered_tokens_chunk = [token.text for token in doc if not token.is_punct and not token.is_stop]
+        filtered_tokens.extend(filtered_tokens_chunk)
+
+    #Creo un vocabolario ordinando e prendendo una sola volta i token filtrati
+    vocabulary = sorted(set(filtered_tokens))
+    return vocabulary
+
+
+def one_hot_encoder_document(directory_path):
+    text_raw = load_directory_txt(directory_path)
+    files = [f for f in os.listdir(directory_path) if
+             os.path.isfile(os.path.join(directory_path, f)) and f.endswith('.txt')]
+    num_documents = len(files)
+    vocabulary = one_hot_encoder_large_txt_only_vocabulary(text_raw)
+
+    matrix = lil_matrix((num_documents, len(vocabulary)))
+
+    for i, file in enumerate(files):
+        text_doc = load_file_txt(os.path.join(directory_path, file))
+        doc = nlp(text_doc)
+
+        filtered_tokens_doc = [token.text for token in doc if not token.is_punct and not token.is_stop]
+
+        for token in filtered_tokens_doc:
+            if token in vocabulary:
+                index_token = vocabulary.index(token)
+
+                if isinstance(index_token, int):
+                    matrix[i, index_token] += 1
 
     return matrix, vocabulary

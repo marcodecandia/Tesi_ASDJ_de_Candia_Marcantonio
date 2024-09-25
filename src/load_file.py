@@ -3,18 +3,23 @@ import json
 
 
 def load_file_jsonl(file):
-    data = ""
+
+    labels = []
+
     try:
         with open(file, 'r') as file_open:
             for (line) in file_open:
-                line_str = str(json.loads(line))
-                data += line_str
+                data = json.loads(line)
+                if data['classification'] == 'POS':
+                    labels.append(1)
+                elif data['classification'] == 'NEG':
+                    labels.append(0)
     except FileNotFoundError:
         print(f'File {file} non trovato')
     except Exception as e:
         print(f'Errore durante la lettura: {e}')
 
-    return data
+    return labels
 
 def load_file_txt(file_path):
 

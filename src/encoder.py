@@ -120,7 +120,8 @@ def one_hot_encoder_document(directory_path):
         text_doc = load_file_txt(os.path.join(directory_path, file))
         doc = nlp(text_doc)
 
-        filtered_tokens_doc = [token.text for token in doc if not token.is_punct and not token.is_stop]
+        filtered_tokens_doc = [token.text for token in doc if not token.is_punct and not token.is_stop
+                               and token.text != '\n']
 
         for token in filtered_tokens_doc:
             if token in vocabulary:
@@ -130,3 +131,4 @@ def one_hot_encoder_document(directory_path):
                     matrix[i, index_token] += 1
 
     return matrix, vocabulary
+

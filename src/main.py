@@ -1,54 +1,72 @@
-from Tesi_ASDJ.src.load_file import load_file_jsonl
-from Tesi_ASDJ.src.encoder import one_hot_encoder, one_hot_encoder_txt, one_hot_encoder_large_txt, one_hot_encoder_document
-from Tesi_ASDJ.src.load_file import load_directory_txt, load_file_txt
+from Tesi_ASDJ.src.encoder import one_hot_encoder, one_hot_encoder_txt, one_hot_encoder_large_txt, \
+    one_hot_encoder_document, one_hot_encoder_large_txt_only_vocabulary
 import time
-
-
-
-#text_path = '../data/movies/movies_union_human_perf.jsonl'
-#print(f"Path del file: {text_path}")
-
-# Carico il file (in seguito ho cambiato e lo carico direttamente nella funzione one_hot_encoder)
-#text_raw = load_file_jsonl(text_path)
-#print(f"Contenuto del file:\n{text_raw}")
-
-# Eseguo la funzione one_hot_encoder
-#matrix, text_encoded = one_hot_encoder(text_path)
-
-# Stampo a video
-#print(f"Matrice di vettori one-hot-encoded: \n {matrix}")
-#print(f"Token codificati: \n {text_encoded}")
-
-
-#directory_path = '../data/movies/docs'
-#print("Path della directory: "+directory_path)
-
-#text_raw = load_directory_txt(directory_path)
-#print("Testo: "+ text_raw)
-
-#matrix, text_encoded = one_hot_encoder_txt(text_raw[0:999])
-#print(f'Matrice di vettori one hot encoded:  \n {matrix}')
+from neural_network import NeuralNetwork
+from optimization_loop import train_loop, test_loop
+from torch import nn
+import torch
+from document_dataset import DocumentDataset
+from load_file import load_file_jsonl
+from torch.utils.data import Dataset, DataLoader
 
 start_time = time.time()
 
-directory_path = '../data/movies/docs'
-#Stampo path della directory di input
-print("Path della directory: "+directory_path)
+#Recupero le label dei documenti di train e test dai file jsonl
+train_labels = load_file_jsonl('../data/movies/train.jsonl')
+test_labels = load_file_jsonl('../data/movies/test.jsonl')
+print(train_labels)
 
-#Converto il contenuot dei file .txt in un'unica stringa (text_raw)
-#text_raw = load_directory_txt(directory_path)
-#print("Testo: "+ text_raw)
+# Definisco un vocabulary globale di train e test
+directory_path_global = '../data/movies/docs'
+#Stampo path della directory che comprende documenti sia train che test
+print("Path della directory: " + directory_path_global)
 
-#A partire dalla string costruisco una matrice one hot encoded
-#matrix, text_encoded = one_hot_encoder_large_txt(text_raw)
-#print(f'Matrice di vettori one hot encoded:  \n {matrix}')
+# Eseguo il one hot encoder e tengo traccia del vocabulary globale
+#matrix, vocabulary = one_hot_encoder_document(directory_path_global)
 
-matrix, vocabulary = one_hot_encoder_document(directory_path)
-print(vocabulary)
-print(matrix)
+#vocabulary_global = vocabulary
+#print(vocabulary_global)
+#print(len(vocabulary_global))
+#Inizializzo il modello di rete neurale
+model = NeuralNetwork(40188)
 
+# Mi costruisco la matrice con vettori di frequenza per i documenti di train
+directory_path_train = '../data/movies/train_docs'
+matrix_train, vocabulary_train = one_hot_encoder_document(directory_path_train)
+
+#Fase di train
+epochs = 10
+batch_size = 32
+learning_rate = 0.001
+
+#Inizializzo la loss function
+loss_fn = nn.CrossEntropyLoss()
+
+#Inizializzo optimizer
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+# Mi costruisco la matrice con vettori di frequenza per i documenti di test
+directory_path_test = '../data/movies/test_docs'
+matrix_test, vocabulary_test = one_hot_encoder_document(directory_path_test)
+
+#Creo i Dataset personalizzati
+train_dataset = DocumentDataset(matrix_train, train_labels)
+test_dataset = DocumentDataset(matrix_test, test_labels)
+
+#Creo i DataLoader
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+
+# Ciclo di training e testing
+for epoch in range(epochs):
+    print(f"Epoch: {epoch + 1} \n ----------------------")
+
+    train_loop(train_dataloader, model, loss_fn, optimizer, batch_size=batch_size)
+
+    test_loop(test_dataloader, model, loss_fn)
+
+print("Training complete")
 
 end_time = time.time()
 exec_time = end_time - start_time
-print(f'Tempo di esecuzione: {exec_time} secondi, {exec_time/60} minuti')
-
+print(f'Tempo di esecuzione: {exec_time} secondi, {exec_time / 60} minuti')

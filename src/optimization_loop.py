@@ -3,8 +3,8 @@ from torch import nn
 
 
 def train_loop(dataloader, model, loss_fn, optimizer, batch_size):
-    size = len(dataloader)
-
+    size = len(dataloader.dataset)
+    total_loss = 0
     model.train()
 
     for batch, (X, y) in enumerate(dataloader):
@@ -18,9 +18,12 @@ def train_loop(dataloader, model, loss_fn, optimizer, batch_size):
         optimizer.step()
         optimizer.zero_grad()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * batch_size + len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        total_loss += loss.item()
+
+        if batch % 50 == 0 or batch == len(dataloader) - 1:
+            current = batch * batch_size + len(X)
+            avg_loss = total_loss / (batch + 1)
+            print(f"Avg loss: {avg_loss:>7f}, Progress: [{current:>5d}/{size:>5d}]")
 
 
 def test_loop(dataloader, model, loss_fn):
@@ -34,7 +37,7 @@ def test_loop(dataloader, model, loss_fn):
         for X, y in dataloader:
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            correct += (pred.round() == y.view_as(pred)).type(torch.float).sum().item()
 
     test_loss /= num_batches
     correct /= size

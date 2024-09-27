@@ -2,10 +2,11 @@ import spacy
 import numpy as np
 from Tesi_ASDJ.src.load_file import load_file_jsonl, load_file_txt, load_directory_txt
 import os
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix, csr_matrix
+from collections import defaultdict
 
 # Carico il modello di Spacy (lingua inglese small)
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
 
 
 def one_hot_encoder(file):
@@ -107,12 +108,23 @@ def one_hot_encoder_large_txt_only_vocabulary(text_raw):
     return vocabulary
 
 
-def one_hot_encoder_document(directory_path):
+from collections import defaultdict
+import os
+from scipy.sparse import lil_matrix
+
+
+def one_hot_encoder_document(directory_path, vocabulary=None):
     text_raw = load_directory_txt(directory_path)
+
+    if vocabulary is None:
+        vocabulary = {token: idx for idx, token in enumerate(one_hot_encoder_large_txt_only_vocabulary(text_raw))}
+    else:
+        vocabulary = {token: idx for idx, token in enumerate(vocabulary)}
+
     files = [f for f in os.listdir(directory_path) if
              os.path.isfile(os.path.join(directory_path, f)) and f.endswith('.txt')]
     num_documents = len(files)
-    vocabulary = one_hot_encoder_large_txt_only_vocabulary(text_raw)
+    print(f"Numero di file letti: {len(files)}")
 
     matrix = lil_matrix((num_documents, len(vocabulary)))
 
@@ -120,15 +132,16 @@ def one_hot_encoder_document(directory_path):
         text_doc = load_file_txt(os.path.join(directory_path, file))
         doc = nlp(text_doc)
 
-        filtered_tokens_doc = [token.text for token in doc if not token.is_punct and not token.is_stop
-                               and token.text != '\n']
+        token_counts = defaultdict(int)
+        for token in doc:
+            if not token.is_punct and not token.is_stop and token.text != '\n':
+                if token.text in vocabulary:
+                    index_token = vocabulary.get(token.text)
+                    if index_token is not None:
+                        token_counts[index_token] += 1
 
-        for token in filtered_tokens_doc:
-            if token in vocabulary:
-                index_token = vocabulary.index(token)
-
-                if isinstance(index_token, int):
-                    matrix[i, index_token] += 1
+        # Aggiorna la matrice con un'operazione batch
+        for index_token, count in token_counts.items():
+            matrix[i, index_token] = count
 
     return matrix, vocabulary
-

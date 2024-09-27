@@ -15,39 +15,40 @@ start_time = time.time()
 train_labels = load_file_jsonl('../data/movies/train.jsonl')
 test_labels = load_file_jsonl('../data/movies/test.jsonl')
 print(train_labels)
+print(test_labels)
 
 # Definisco un vocabulary globale di train e test
 directory_path_global = '../data/movies/docs'
-#Stampo path della directory che comprende documenti sia train che test
 print("Path della directory: " + directory_path_global)
 
 # Eseguo il one hot encoder e tengo traccia del vocabulary globale
-#matrix, vocabulary = one_hot_encoder_document(directory_path_global)
+matrix, vocabulary_global = one_hot_encoder_document(directory_path_global)
 
-#vocabulary_global = vocabulary
-#print(vocabulary_global)
-#print(len(vocabulary_global))
-#Inizializzo il modello di rete neurale
-model = NeuralNetwork(40188)
+print(f"Dimensione del vocabolario globale: {len(vocabulary_global)}")
+
 
 # Mi costruisco la matrice con vettori di frequenza per i documenti di train
 directory_path_train = '../data/movies/train_docs'
-matrix_train, vocabulary_train = one_hot_encoder_document(directory_path_train)
+matrix_train, _ = one_hot_encoder_document(directory_path_train, vocabulary_global)
+
+
+#Inizializzo il modello di rete neurale
+model = NeuralNetwork(len(vocabulary_global))
 
 #Fase di train
 epochs = 10
-batch_size = 32
+batch_size = 16
 learning_rate = 0.001
 
 #Inizializzo la loss function
-loss_fn = nn.CrossEntropyLoss()
+loss_fn = torch.nn.BCEWithLogitsLoss()
 
 #Inizializzo optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Mi costruisco la matrice con vettori di frequenza per i documenti di test
 directory_path_test = '../data/movies/test_docs'
-matrix_test, vocabulary_test = one_hot_encoder_document(directory_path_test)
+matrix_test, _ = one_hot_encoder_document(directory_path_test, vocabulary_global)
 
 #Creo i Dataset personalizzati
 train_dataset = DocumentDataset(matrix_train, train_labels)
@@ -56,6 +57,8 @@ test_dataset = DocumentDataset(matrix_test, test_labels)
 #Creo i DataLoader
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+print(f"Numero di campioni nel train_dataloader: {len(train_dataloader.dataset)}")
+print(f"Numero di campioni nel test_dataloader: {len(test_dataloader.dataset)}")
 
 # Ciclo di training e testing
 for epoch in range(epochs):

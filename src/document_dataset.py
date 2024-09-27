@@ -9,7 +9,7 @@ class DocumentDataset(Dataset):
             # Converte la matrice sparsa in una densa
             data_matrix = data_matrix.todense()
         self.data_matrix = torch.tensor(data_matrix, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.long)
+        self.labels = torch.tensor(labels, dtype=torch.float)
 
     def __len__(self):
         return len(self.labels)

@@ -1,5 +1,7 @@
 import torch
-from torch import nn
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+
 
 
 def train_loop(dataloader, model, loss_fn, optimizer, batch_size):
@@ -33,6 +35,10 @@ def test_loop(dataloader, model, loss_fn):
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
 
+    #Liste in cui memorizzo etichette vere e previste
+    all_pred_labels = []
+    all_true_labels = []
+
     with torch.no_grad():
         for X, y in dataloader:
 
@@ -44,8 +50,18 @@ def test_loop(dataloader, model, loss_fn):
 
             pred_labels = (pred_probs > 0.5).float()
 
+            all_pred_labels.extend(pred_labels.cpu().numpy())
+            all_true_labels.extend(y.cpu().numpy())
+
             correct += (pred_labels == y).type(torch.float).sum().item()
 
     test_loss /= num_batches
     correct /= size
+
+    #Calcolo precision, recall e f1
+    precision = precision_score(all_true_labels, all_pred_labels)
+    recall = recall_score(all_true_labels, all_pred_labels)
+    f1 = f1_score(all_true_labels, all_pred_labels)
+
     print(f"Test error: \n Accuracy: {(100 * correct):>0.1f}%, Average loss: {test_loss:>8f}% \n")
+    print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f} \n")

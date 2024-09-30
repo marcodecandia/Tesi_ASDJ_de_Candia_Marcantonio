@@ -35,9 +35,16 @@ def test_loop(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for X, y in dataloader:
+
             pred = model(X)
+
             test_loss += loss_fn(pred, y).item()
-            correct += (pred.round() == y.view_as(pred)).type(torch.float).sum().item()
+
+            pred_probs = torch.sigmoid(pred)
+
+            pred_labels = (pred_probs > 0.5).float()
+
+            correct += (pred_labels == y).type(torch.float).sum().item()
 
     test_loss /= num_batches
     correct /= size

@@ -2,8 +2,6 @@ import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
 
 
-
-
 def train_loop(dataloader, model, loss_fn, optimizer, batch_size):
     size = len(dataloader.dataset)
     total_loss = 0
@@ -11,11 +9,11 @@ def train_loop(dataloader, model, loss_fn, optimizer, batch_size):
 
     for batch, (X, y) in enumerate(dataloader):
 
-        #Prediction e loss
+        # Prediction e loss
         pred = model(X)
         loss = loss_fn(pred, y)
 
-        #Backpropagation
+        # Backpropagation
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -35,13 +33,12 @@ def test_loop(dataloader, model, loss_fn):
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
 
-    #Liste in cui memorizzo etichette vere e previste
+    # Liste in cui memorizzo etichette vere e previste
     all_pred_labels = []
     all_true_labels = []
 
     with torch.no_grad():
         for X, y in dataloader:
-
             pred = model(X)
 
             test_loss += loss_fn(pred, y).item()
@@ -58,7 +55,7 @@ def test_loop(dataloader, model, loss_fn):
     test_loss /= num_batches
     correct /= size
 
-    #Calcolo precision, recall e f1
+    # Calcolo precision, recall e f1
     precision = precision_score(all_true_labels, all_pred_labels)
     recall = recall_score(all_true_labels, all_pred_labels)
     f1 = f1_score(all_true_labels, all_pred_labels)

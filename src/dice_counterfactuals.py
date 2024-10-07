@@ -1,5 +1,4 @@
 import dice_ml
-from dice_ml.utils import helpers
 import torch
 import numpy as np
 import pandas as pd
@@ -44,7 +43,7 @@ matrix_train, _ = one_hot_encoder_document("../data/movies/train_docs", vocabula
 matrix_test, _ = one_hot_encoder_document("../data/movies/test_docs", vocabulary_global)
 
 # Creo un Dataframe dei dati di training
-data_df = pd.DataFrame(matrix_train.todense(), columns=continuous_features)
+data_df = pd.DataFrame(matrix_train.todense(), columns=categorical_features)
 data_df["outcome"] = train_labels
 print(len(data_df.columns))
 print(len(continuous_features))
@@ -53,7 +52,7 @@ print(len(continuous_features))
 missing_features = set(continuous_features) - set(data_df.columns.tolist())
 if missing_features:
     print(f"Le seguenti feature sono nel vocabolario ma non nel DataFrame: {missing_features}")
-    # Filtra le feature mancanti (puoi scegliere di rimuoverle o correggere il vocabolario)
+    # Filtro le feature mancanti
     continuous_features = [f for f in continuous_features if f in data_df.columns.tolist()]
     print(f"Le nuove feature continue aggiornate: {continuous_features}")
 else:
@@ -72,7 +71,6 @@ instance = pd.DataFrame([matrix_test[0].todense().tolist()[0]], columns=continuo
 
 prediction = ModelWrapper(model).predict([instance])
 print(prediction)
-
 
 # Inizializzo generatore di controfattuali
 exp = dice_ml.Dice(data, dice_model, method="random")

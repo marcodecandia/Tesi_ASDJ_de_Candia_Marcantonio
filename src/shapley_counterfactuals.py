@@ -13,7 +13,7 @@ with open(vocabulary_path, 'r') as f:
     vocabulary_global = [line.strip() for line in f.readlines()]
 
 print("Vocabolario caricato con successo")
-print(vocabulary_global)  # Visualizzo il vocabolario caricato
+print(vocabulary_global)
 
 vocab_size = len(vocabulary_global)
 print(vocab_size)
@@ -37,7 +37,7 @@ print(f"Dimensione della matrice di test: {matrix_test.shape}")
 explainer = shap.DeepExplainer(model, torch.tensor(matrix_train.todense(), dtype=torch.float32))
 shap_values = explainer.shap_values(torch.tensor(matrix_test.todense(), dtype=torch.float32), check_additivity=False)
 
-# Se shap_values è una lista (perché è multi-classe), prendi solo i valori della prima classe
+# Prendo solo i valori della prima classe (class. binaria)
 if isinstance(shap_values, list):
     shap_values = shap_values[0]
 

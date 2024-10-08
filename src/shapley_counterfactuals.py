@@ -27,6 +27,8 @@ model.eval()
 
 # Carico i dati di test
 directory_path_test = '../data/movies/test_docs'
+
+
 matrix_train, _ = one_hot_encoder_document("../data/movies/train_docs", vocabulary_global)
 print(f"Dimensione della matrice di addestramento: {matrix_train.shape}")
 matrix_test, _ = one_hot_encoder_document(directory_path_test, vocabulary_global)

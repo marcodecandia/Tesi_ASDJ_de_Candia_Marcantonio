@@ -30,5 +30,5 @@ class NeuralNetwork(nn.Module):
     def forward(self, x):
         x = x.view(x.size(0), -1)
         logits = self.linear_relu_stack(x)
-        return torch.sigmoid(logits)
+        return logits.squeeze(1)
 

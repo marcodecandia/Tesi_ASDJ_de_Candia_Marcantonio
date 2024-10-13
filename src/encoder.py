@@ -71,10 +71,11 @@ def one_hot_encoder_large_txt(text_raw):
     #Processo un chunk alla volta e aggiungo volta per volta i token filtrati alla lista
     for chunk in chunks:
         doc = nlp(chunk)
-        filtered_tokens_chunk = [token.text for token in doc if not token.is_punct and not token.is_stop]
+        filtered_tokens_chunk = [token.text for token in doc if
+                                 not token.is_punct and not token.is_stop and token.text.strip()]
         filtered_tokens.extend(filtered_tokens_chunk)
 
-    #Creo un vocabolario ordinando e prendendo una sola volta i token filtrati
+    # Creo un vocabolario ordinando e prendendo una sola volta i token filtrati
     vocabulary = sorted(set(filtered_tokens))
 
     #Inizializzo una matrice sparsa
@@ -100,7 +101,8 @@ def one_hot_encoder_large_txt_only_vocabulary(text_raw):
     #Processo un chunk alla volta e aggiungo volta per volta i token filtrati alla lista
     for chunk in chunks:
         doc = nlp(chunk)
-        filtered_tokens_chunk = [token.text for token in doc if not token.is_punct and not token.is_stop]
+        filtered_tokens_chunk = [token.text for token in doc if
+                                 not token.is_punct and not token.is_stop and token.text != '\n' and token.text.strip()]
         filtered_tokens.extend(filtered_tokens_chunk)
 
     #Creo un vocabolario ordinando e prendendo una sola volta i token filtrati
@@ -115,15 +117,12 @@ from scipy.sparse import lil_matrix
 
 def one_hot_encoder_document(directory_path, vocabulary=None):
     text_raw = load_directory_txt(directory_path)
-    oov_token = "<OOV>"
 
     if vocabulary is None:
         vocabulary = {token: idx for idx, token in enumerate(one_hot_encoder_large_txt_only_vocabulary(text_raw))}
-        vocabulary[oov_token] = len(vocabulary)
+
     else:
         vocabulary = {token: idx for idx, token in enumerate(vocabulary)}
-        if oov_token not in vocabulary:
-            vocabulary[oov_token] = len(vocabulary)
 
     files = [f for f in os.listdir(directory_path) if
              os.path.isfile(os.path.join(directory_path, f)) and f.endswith('.txt')]
@@ -139,13 +138,10 @@ def one_hot_encoder_document(directory_path, vocabulary=None):
         token_counts = defaultdict(int)
 
         for token in doc:
-            if not token.is_punct and not token.is_stop and token.text != '\n':
+            if not token.is_punct and not token.is_stop and token.text != '\n' and token.text != "":
                 if token.text in vocabulary:
                     index_token = vocabulary.get(token.text)
-                else:
-                    index_token = vocabulary[oov_token]
-
-                token_counts[index_token] += 1
+                    token_counts[index_token] += 1
 
         # Aggiorna la matrice con un'operazione batch
         for index_token, count in token_counts.items():

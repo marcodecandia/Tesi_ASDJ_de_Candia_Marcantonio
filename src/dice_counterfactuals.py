@@ -59,7 +59,7 @@ categorical_features = []
 
 # Carico le etichette (outcome)
 train_labels = load_file_jsonl("../data/movies/train.jsonl")
-print(f"Number of labels loaded: {len(train_labels)}")
+
 
 # Carico documenti e trasformo in matrici di frequenze
 #matrix_train, _ = one_hot_encoder_document("../data/movies/train_docs", vocabulary_global)
@@ -94,8 +94,6 @@ if missing_features:
 else:
     print("Tutte le feature sono correttamente presenti nel DataFrame.")
 
-# print(data_df['italy'].dtype)
-
 
 data = dice_ml.Data(dataframe=data_df,
                     continuous_features=continuous_features,
@@ -110,7 +108,11 @@ dice_model = dice_ml.Model(model=ModelWrapper(model), backend="PYT")
 print("b")
 
 # Seleziono una istanza di test
-instance = pd.DataFrame([matrix_test[0].todense()], columns=continuous_features)
+instance_array = np.squeeze(matrix_test[0].todense())
+print(f"Shape dell'istance array dopo squeeze: {instance_array.shape}")
+
+# Creazione del DataFrame con le colonne corrette
+instance = pd.DataFrame(instance_array, columns=continuous_features)
 
 print("c")
 
@@ -122,10 +124,85 @@ print(f"Prediction for the test instance: {prediction}")
 exp = dice_ml.Dice(data, dice_model, method="random")
 
 # Genero controfattuali per la prima istanza
-counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=3, desired_class="opposite")
+counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
 
 # Visualizzo i controfattuali
 counterfactuals_1.visualize_as_dataframe()
 
 end_time = time.time()
 print(f"Tempo di esecuzione: {end_time - start_time} secondi")
+
+def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
+    class ModelWrapper:
+        def __init__(self, model):
+            self.model = model
+
+        def predict(self, x):
+            with torch.no_grad():
+                x_tensor = torch.tensor(x, dtype=torch.float32)
+                preds = self.model(x_tensor)
+                return preds.numpy()
+
+    # Definisco le feature continue e categoriali
+    continuous_features = vocabulary_global
+    print(len(
+        continuous_features
+    ))
+
+    categorical_features = []
+
+    # Carico le etichette (outcome)
+    train_labels = load_file_jsonl("../data/movies/train.jsonl")
+
+    # Creo un DataFrame dei dati di training
+    data_df = pd.DataFrame(matrix_train.todense(), columns=continuous_features)
+
+    # Aggiungo la colonna target "outcome"
+    data_df["_outcome_"] = np.array(train_labels, dtype=np.float64)
+    print(f"Numero di colonne nel dataframe con l\'outcome: {len(data_df.columns)}")
+    # print(f"DataFrame columns: {data_df.columns.tolist()}")  # Stampa le colonne
+
+    # Verifico se tutte le feature sono presenti come colonne nel DataFrame
+    missing_features = set(continuous_features) - set(data_df.columns.tolist())
+    if missing_features:
+        print(f"Le seguenti feature sono nel vocabolario ma non nel DataFrame: {missing_features}")
+        # Filtro le feature mancanti
+        continuous_features = [f for f in continuous_features if f in data_df.columns.tolist()]
+        print(f"Le nuove feature continue aggiornate: {continuous_features}")
+    else:
+        print("Tutte le feature sono correttamente presenti nel DataFrame.")
+
+    data = dice_ml.Data(dataframe=data_df,
+                        continuous_features=continuous_features,
+                        categorical_features=categorical_features,
+                        outcome_name="_outcome_")
+
+    print("a")
+
+    # Definisco modello per DiCE
+    dice_model = dice_ml.Model(model=ModelWrapper(model), backend="PYT")
+
+    print("b")
+
+    # Seleziono una istanza di test
+    instance_array = np.squeeze(matrix_test[0].todense())
+    print(f"Shape dell'istance array dopo squeeze: {instance_array.shape}")
+
+    # Creazione del DataFrame con le colonne corrette
+    instance = pd.DataFrame(instance_array, columns=continuous_features)
+
+    print("c")
+
+    # Ottengo la predizione per l'istanza selezionata
+    prediction = ModelWrapper(model).predict(instance)
+    print(f"Prediction for the test instance: {prediction}")
+
+    # Inizializzo il generatore di controfattuali
+    exp = dice_ml.Dice(data, dice_model, method="random")
+
+    # Genero controfattuali per la prima istanza
+    counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
+
+    # Visualizzo i controfattuali
+    counterfactuals_1.visualize_as_dataframe()
+

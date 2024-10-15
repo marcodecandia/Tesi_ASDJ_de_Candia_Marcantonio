@@ -1,5 +1,7 @@
 import json
 from Tesi_ASDJ.src.encoder import one_hot_encoder_document, one_hot_encoder_large_txt_only_vocabulary
+from Tesi_ASDJ.src.shapley_counterfactuals import shapley_counterfactuals
+from Tesi_ASDJ.src.dice_counterfactuals import dice_counterfactuals
 import time
 from neural_network import NeuralNetwork
 from optimization_loop import train_loop, test_loop
@@ -48,12 +50,13 @@ model = NeuralNetwork(len(vocabulary_global))
 epochs = 10
 batch_size = 16
 learning_rate = 0.001
+weight_decay = 1e-5
 
 #Inizializzo la loss function
-loss_fn = torch.nn.BCEWithLogitsLoss()
+loss_fn = torch.nn.BCELoss()
 
 # Inizializzo optimizer
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 # Mi costruisco la matrice con vettori di frequenza per i documenti di test
 directory_path_test = '../data/movies/test_docs'
@@ -78,6 +81,8 @@ test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 print(f"Numero di campioni nel train_dataloader: {len(train_dataloader.dataset)}")
 print(f"Numero di campioni nel test_dataloader: {len(test_dataloader.dataset)}")
 
+
+
 # Ciclo di training e testing
 for epoch in range(epochs):
     print(f"Epoch: {epoch + 1} \n ----------------------")
@@ -85,6 +90,7 @@ for epoch in range(epochs):
     train_loop(train_dataloader, model, loss_fn, optimizer, batch_size=batch_size)
 
     test_loop(test_dataloader, model, loss_fn)
+
 
 print("Training complete")
 
@@ -98,3 +104,13 @@ try:
     print("Modello salvato correttamente!")
 except Exception as e:
     print(f"Errore durante il salvataggio del modello: {e}")
+
+shapley_counterfactuals(model=model,
+                        vocabulary_global=vocabulary_global,
+                        matrix_train=matrix_train,
+                        matrix_test=matrix_test)
+
+dice_counterfactuals(model=model,
+                     vocabulary_global=vocabulary_global,
+                     matrix_train=matrix_train,
+                     matrix_test=matrix_test)

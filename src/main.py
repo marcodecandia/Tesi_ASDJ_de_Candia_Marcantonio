@@ -94,9 +94,6 @@ for epoch in range(epochs):
 
 print("Training complete")
 
-end_time = time.time()
-exec_time = end_time - start_time
-print(f'Tempo di esecuzione: {exec_time} secondi, {exec_time / 60} minuti')
 
 # Salvo il modello addestrato
 try:
@@ -114,3 +111,7 @@ dice_counterfactuals(model=model,
                      vocabulary_global=vocabulary_global,
                      matrix_train=matrix_train,
                      matrix_test=matrix_test)
+
+end_time = time.time()
+exec_time = end_time - start_time
+print(f'Tempo di esecuzione: {exec_time} secondi, {exec_time / 60} minuti')

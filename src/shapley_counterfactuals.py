@@ -100,8 +100,7 @@ def shapley_counterfactuals(model, vocabulary_global, matrix_train, matrix_test)
 
     shap_values = np.squeeze(shap_values)
 
-    print(f"Shape of shap_values: {shap_values.shape}")
-    print(f"Shape of data used for SHAP: {matrix_test.shape}")
+    print(f"Dimensione di shap_values: {shap_values.shape}")
 
     # Converto i valori SHAP in un oggetto Explanation
     shap_values_explanation = shap.Explanation(values=shap_values,

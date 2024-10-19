@@ -63,6 +63,7 @@ shap_values_explanation = shap.Explanation(values=shap_values,
                                            base_values=explainer.expected_value,
                                            data=matrix_test.todense(),
                                            feature_names=vocabulary_global)
+print(f"explanation shape: {shap_values_explanation.shape}")
 
 # Visualizzo i valori SHAP
 try:
@@ -77,6 +78,10 @@ try:
 except Exception as e:
     print(f"Errore durante la creazione del bar plot: {e}")
 
+try:
+    shap.plots.heatmap(shap_values_explanation[:1000])
+except Exception as e:
+    print(f"Errore durante la creazione del beeswarm plot: {e}")
 
 def shapley_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
     #Dimensione del vocabolario

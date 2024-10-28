@@ -53,6 +53,8 @@ def test_loop(dataloader, model, loss_fn):
 
             pred_labels = (pred_probs > 0.5).float()
 
+            print(f"previsione {pred_probs}, in realtà {y}")
+
             all_pred_labels.extend(pred_labels.cpu().numpy().astype(int))
             all_true_labels.extend(y.cpu().numpy().astype(int))
 

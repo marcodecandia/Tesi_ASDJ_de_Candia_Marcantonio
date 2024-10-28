@@ -90,20 +90,25 @@ def one_hot_encoder_large_txt(text_raw):
     return matrix, vocabulary
 
 
-def one_hot_encoder_large_txt_only_vocabulary(text_raw):
+def one_hot_encoder_large_txt_only_vocabulary(text_raw, min_freq=2, min_len=3):
     #Divido la stringa di input in chunk di lunghezza 500k caratteri
     chunk_size = 500000
     chunks = [text_raw[i:i + chunk_size] for i in range(0, len(text_raw), chunk_size)]
 
     #Inizializzo la lista dei token filtrati
     filtered_tokens = []
+    token_freq = defaultdict(int)
 
     #Processo un chunk alla volta e aggiungo volta per volta i token filtrati alla lista
     for chunk in chunks:
         doc = nlp(chunk)
-        filtered_tokens_chunk = [token.text for token in doc if
-                                 not token.is_punct and not token.is_stop and token.text != '\n' and token.text.strip()]
-        filtered_tokens.extend(filtered_tokens_chunk)
+        for token in doc:
+            lemma = token.lemma_.lower()
+            if not token.is_punct and not token.is_stop and len(lemma) >= min_len and lemma.isalpha():
+                filtered_tokens.append(lemma)
+                token_freq[lemma] += 1
+
+    filtered_tokens = [token for token, freq in token_freq.items() if freq >= min_freq]
 
     #Creo un vocabolario ordinando e prendendo una sola volta i token filtrati
     vocabulary = sorted(set(filtered_tokens))
@@ -120,14 +125,13 @@ def one_hot_encoder_document(directory_path, vocabulary=None):
 
     if vocabulary is None:
         vocabulary = {token: idx for idx, token in enumerate(one_hot_encoder_large_txt_only_vocabulary(text_raw))}
-
     else:
         vocabulary = {token: idx for idx, token in enumerate(vocabulary)}
 
     files = [f for f in os.listdir(directory_path) if
              os.path.isfile(os.path.join(directory_path, f)) and f.endswith('.txt')]
     num_documents = len(files)
-    print(f"Numero di file letti: {len(files)}")
+    print(f"Numero di file letti: {num_documents}")
 
     matrix = lil_matrix((num_documents, len(vocabulary)))
 
@@ -138,9 +142,12 @@ def one_hot_encoder_document(directory_path, vocabulary=None):
         token_counts = defaultdict(int)
 
         for token in doc:
-            if not token.is_punct and not token.is_stop and token.text != '\n' and token.text != "":
-                if token.text in vocabulary:
-                    index_token = vocabulary.get(token.text)
+
+            lemma = token.lemma_.lower()
+
+            if not token.is_punct and not token.is_stop and token.text != '\n' and lemma.strip() and lemma.isalpha():
+                if lemma in vocabulary:
+                    index_token = vocabulary.get(lemma)
                     token_counts[index_token] += 1
 
         # Aggiorna la matrice con un'operazione batch
@@ -148,3 +155,4 @@ def one_hot_encoder_document(directory_path, vocabulary=None):
             matrix[i, index_token] = count
 
     return matrix, vocabulary
+

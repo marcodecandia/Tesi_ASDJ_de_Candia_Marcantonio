@@ -1,7 +1,7 @@
 import json
 from Tesi_ASDJ.src.encoder import one_hot_encoder_document, one_hot_encoder_large_txt_only_vocabulary
-from Tesi_ASDJ.src.shapley_counterfactuals import shapley_counterfactuals
-from Tesi_ASDJ.src.dice_counterfactuals import dice_counterfactuals
+#from Tesi_ASDJ.src.shapley_counterfactuals import shapley_counterfactuals
+#from Tesi_ASDJ.src.dice_counterfactuals import dice_counterfactuals
 import time
 from neural_network import NeuralNetwork
 from optimization_loop import train_loop, test_loop
@@ -102,15 +102,15 @@ try:
 except Exception as e:
     print(f"Errore durante il salvataggio del modello: {e}")
 
-shapley_counterfactuals(model=model,
-                        vocabulary_global=vocabulary_global,
-                        matrix_train=matrix_train,
-                        matrix_test=matrix_test)
+#shapley_counterfactuals(model=model,
+#                        vocabulary_global=vocabulary_global,
+#                        matrix_train=matrix_train,
+#                        matrix_test=matrix_test)
 
-dice_counterfactuals(model=model,
-                     vocabulary_global=vocabulary_global,
-                     matrix_train=matrix_train,
-                     matrix_test=matrix_test)
+#dice_counterfactuals(model=model,
+#                     vocabulary_global=vocabulary_global,
+#                     matrix_train=matrix_train,
+#                     matrix_test=matrix_test)
 
 end_time = time.time()
 exec_time = end_time - start_time

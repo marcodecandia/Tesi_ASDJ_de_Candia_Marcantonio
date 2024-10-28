@@ -42,11 +42,25 @@ class ModelWrapper:
     def __init__(self, model):
         self.model = model
 
+    def __call__(self, x):
+        return self.predict(x)
+
     def predict(self, x):
+
+        if isinstance(x, pd.DataFrame):
+            x = x.to_numpy()
+
         with torch.no_grad():
             x_tensor = torch.tensor(x, dtype=torch.float32)
             preds = self.model(x_tensor)
             return preds.numpy()
+
+    def get_output(self, input_instance):
+        input_tensor = torch.tensor(input_instance, dtype=torch.float32)
+
+        with torch.no_grad():
+            out = self.model(input_tensor).float()
+            return out
 
 
 # Definisco le feature continue e categoriali
@@ -118,7 +132,7 @@ print("c")
 
 # Ottengo la predizione per l'istanza selezionata
 prediction = ModelWrapper(model).predict(instance)
-print(f"Prediction for the test instance: {prediction}")
+print(f"Predizione per l'istanza di test: {prediction}")
 
 # Inizializzo il generatore di controfattuali
 exp = dice_ml.Dice(data, dice_model, method="random")

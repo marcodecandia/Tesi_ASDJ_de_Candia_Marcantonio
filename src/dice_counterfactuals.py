@@ -145,7 +145,7 @@ print(f"Predizione per l'istanza di test: {prediction}")
 exp = dice_ml.Dice(data, dice_model, method="random")
 
 # Genero controfattuali per la prima istanza
-counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
+counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=199, desired_class="opposite")
 
 # Visualizzo i controfattuali
 counterfactuals_1.visualize_as_dataframe()
@@ -242,7 +242,7 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
     exp = dice_ml.Dice(data, dice_model, method="random")
 
     # Genero controfattuali per la prima istanza
-    counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
+    counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=199, desired_class="opposite")
 
     # Visualizzo i controfattuali
     counterfactuals_1.visualize_as_dataframe()

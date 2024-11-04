@@ -50,15 +50,16 @@ class ModelWrapper:
         if isinstance(x, pd.DataFrame):
             x = x.to_numpy()
 
-        x_tensor = torch.tensor(x, dtype=torch.float32)
+        if torch.is_tensor(x):
+            x_tensor = x.clone().detach().float()
+        else:
+            x_tensor = torch.tensor(x, dtype=torch.float32)
 
         with torch.no_grad():
             preds =self.get_output(x_tensor)
             return preds
 
     def get_output(self, input_instance):
-
-        print(type(input_instance))
 
         # Controllo del tipo di input
         if isinstance(input_instance, pd.DataFrame):
@@ -155,19 +156,22 @@ counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=1, desired_
 counterfactuals_1.visualize_as_dataframe()
 
 # Confronto i valori dell'istanza originale e del controfattuale
-original_instance_array = np.squeeze(matrix_test[0].todense())
-counterfactual_instance_array = counterfactuals_1.cf_data.values[0]  # Assumendo che ci sia solo un controfattuale
+original_instance_array = np.squeeze(matrix_test[0].todense()).flatten()
+counterfactual_instance_array = counterfactuals_1.cf_examples_list[0].final_cfs_df.to_numpy()[0].flatten()
 
 changes = []
-for i, (orig_val, cf_val) in enumerate(zip(original_instance_array, counterfactual_instance_array)):
+for i in range(len(original_instance_array)):
+    orig_val = original_instance_array[i]
+    cf_val = counterfactual_instance_array[i]
     if orig_val != cf_val:
         feature_name = continuous_features[i]
         changes.append((feature_name, orig_val, cf_val))
 
+
 # Stampa i risultati
-print("Caratteristiche con valori cambiati:")
+print("Features con valori cambiati: ")
 for feature_name, orig_val, cf_val in changes:
-    print(f"Caratteristica: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
+    print(f"Feature: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
 
 end_time = time.time()
 print(f"Tempo di esecuzione: {end_time - start_time} secondi")

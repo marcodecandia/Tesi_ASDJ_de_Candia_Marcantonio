@@ -1,7 +1,7 @@
 import json
 from Tesi_ASDJ.src.encoder import one_hot_encoder_document, one_hot_encoder_large_txt_only_vocabulary
-#from Tesi_ASDJ.src.shapley_counterfactuals import shapley_counterfactuals
-#from Tesi_ASDJ.src.dice_counterfactuals import dice_counterfactuals
+from Tesi_ASDJ.src.shapley_counterfactuals import shapley_counterfactuals
+from Tesi_ASDJ.src.dice_counterfactuals import dice_counterfactuals
 import time
 from neural_network import NeuralNetwork
 from optimization_loop import train_loop, test_loop
@@ -81,8 +81,6 @@ test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 print(f"Numero di campioni nel train_dataloader: {len(train_dataloader.dataset)}")
 print(f"Numero di campioni nel test_dataloader: {len(test_dataloader.dataset)}")
 
-
-
 # Ciclo di training e testing
 for epoch in range(epochs):
     print(f"Epoch: {epoch + 1} \n ----------------------")
@@ -91,9 +89,7 @@ for epoch in range(epochs):
 
     test_loop(test_dataloader, model, loss_fn)
 
-
 print("Training complete")
-
 
 # Salvo il modello addestrato
 try:
@@ -102,17 +98,17 @@ try:
 except Exception as e:
     print(f"Errore durante il salvataggio del modello: {e}")
 
-#shapley_counterfactuals(model=model,
-#                        vocabulary_global=vocabulary_global,
-#                        matrix_train=matrix_train,
-#                        matrix_test=matrix_test)
 
-#dice_counterfactuals(model=model,
-#                     vocabulary_global=vocabulary_global,
-#                     matrix_train=matrix_train,
-#                     matrix_test=matrix_test)
+shapley_counterfactuals(model=model,
+                        vocabulary_global=vocabulary_global,
+                        matrix_train=matrix_train,
+                        matrix_test=matrix_test)
+
+dice_counterfactuals(model=model,
+                     vocabulary_global=vocabulary_global,
+                     matrix_train=matrix_train,
+                     matrix_test=matrix_test)
 
 end_time = time.time()
 exec_time = end_time - start_time
 print(f'Tempo di esecuzione: {exec_time} secondi, {exec_time / 60} minuti')
-

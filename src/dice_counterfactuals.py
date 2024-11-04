@@ -73,7 +73,6 @@ class ModelWrapper:
 
         with torch.no_grad():
             out = self.model(input_tensor).clone().detach().float()
-            print(type(out))
             return out.numpy()
 
 
@@ -125,12 +124,9 @@ data = dice_ml.Data(dataframe=data_df,
                     categorical_features=categorical_features,
                     outcome_name="_outcome_")
 
-print("a")
 
 # Definisco modello per DiCE
 dice_model = dice_ml.Model(model=ModelWrapper(model), backend="PYT")
-
-print("b")
 
 # Seleziono una istanza di test
 instance_array = np.squeeze(matrix_test[0].todense())
@@ -139,7 +135,6 @@ print(f"Shape dell'istance array dopo squeeze: {instance_array.shape}")
 # Creazione del DataFrame con le colonne corrette
 instance = pd.DataFrame(instance_array, columns=continuous_features)
 
-print("c")
 
 # Ottengo la predizione per l'istanza selezionata
 instance_tensor = torch.tensor(instance_array, dtype=torch.float32)
@@ -158,17 +153,18 @@ counterfactuals_1.visualize_as_dataframe()
 # Confronto i valori dell'istanza originale e del controfattuale
 original_instance_array = np.squeeze(matrix_test[0].todense()).flatten()
 counterfactual_instance_array = counterfactuals_1.cf_examples_list[0].final_cfs_df.to_numpy()[0].flatten()
-
+print(len(original_instance_array))
+print(len(counterfactual_instance_array))
 changes = []
 for i in range(len(original_instance_array)):
-    orig_val = original_instance_array[i]
+    orig_val = original_instance_array[0, i]
     cf_val = counterfactual_instance_array[i]
     if orig_val != cf_val:
         feature_name = continuous_features[i]
         changes.append((feature_name, orig_val, cf_val))
 
 
-# Stampa i risultati
+# Stampo i risultati
 print("Features con valori cambiati: ")
 for feature_name, orig_val, cf_val in changes:
     print(f"Feature: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
@@ -250,3 +246,21 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
 
     # Visualizzo i controfattuali
     counterfactuals_1.visualize_as_dataframe()
+
+    # Confronto i valori dell'istanza originale e del controfattuale
+    original_instance_array = np.squeeze(matrix_test[0].todense()).flatten()
+    counterfactual_instance_array = counterfactuals_1.cf_examples_list[0].final_cfs_df.to_numpy()[0].flatten()
+    print(len(original_instance_array))
+    print(len(counterfactual_instance_array))
+    changes = []
+    for i in range(len(original_instance_array)):
+        orig_val = original_instance_array[0, i]
+        cf_val = counterfactual_instance_array[i]
+        if orig_val != cf_val:
+            feature_name = continuous_features[i]
+            changes.append((feature_name, orig_val, cf_val))
+
+    # Stampo i risultati
+    print("Features con valori cambiati: ")
+    for feature_name, orig_val, cf_val in changes:
+        print(f"Feature: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")

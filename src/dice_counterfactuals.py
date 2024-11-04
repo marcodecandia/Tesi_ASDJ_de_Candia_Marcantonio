@@ -50,17 +50,30 @@ class ModelWrapper:
         if isinstance(x, pd.DataFrame):
             x = x.to_numpy()
 
+        x_tensor = torch.tensor(x, dtype=torch.float32)
+
         with torch.no_grad():
-            x_tensor = torch.tensor(x, dtype=torch.float32)
-            preds = self.model(x_tensor)
-            return preds.numpy()
+            preds =self.get_output(x_tensor)
+            return preds
 
     def get_output(self, input_instance):
-        input_tensor = torch.tensor(input_instance, dtype=torch.float32)
+
+        print(type(input_instance))
+
+        # Controllo del tipo di input
+        if isinstance(input_instance, pd.DataFrame):
+            input_tensor = torch.tensor(input_instance.to_numpy(), dtype=torch.float32)
+        elif isinstance(input_instance, np.ndarray):
+            input_tensor = torch.tensor(input_instance, dtype=torch.float32)
+        elif isinstance(input_instance, torch.Tensor):
+            input_tensor = input_instance.clone().detach().float()
+        else:
+            raise TypeError("input_instance deve essere un DataFrame, un array NumPy o un torch.Tensor")
 
         with torch.no_grad():
-            out = self.model(input_tensor).float()
-            return out
+            out = self.model(input_tensor).clone().detach().float()
+            print(type(out))
+            return out.numpy()
 
 
 # Definisco le feature continue e categoriali
@@ -73,7 +86,6 @@ categorical_features = []
 
 # Carico le etichette (outcome)
 train_labels = load_file_jsonl("../data/movies/train.jsonl")
-
 
 # Carico documenti e trasformo in matrici di frequenze
 #matrix_train, _ = one_hot_encoder_document("../data/movies/train_docs", vocabulary_global)
@@ -95,7 +107,6 @@ data_df = pd.DataFrame(matrix_train.todense(), columns=continuous_features)
 # Aggiungo la colonna target "outcome"
 data_df["_outcome_"] = np.array(train_labels, dtype=np.float64)
 print(f"Numero di colonne nel dataframe con l\'outcome: {len(data_df.columns)}")
-#print(f"DataFrame columns: {data_df.columns.tolist()}")  # Stampa le colonne
 
 
 # Verifico se tutte le feature sono presenti come colonne nel DataFrame
@@ -107,7 +118,6 @@ if missing_features:
     print(f"Le nuove feature continue aggiornate: {continuous_features}")
 else:
     print("Tutte le feature sono correttamente presenti nel DataFrame.")
-
 
 data = dice_ml.Data(dataframe=data_df,
                     continuous_features=continuous_features,
@@ -131,7 +141,8 @@ instance = pd.DataFrame(instance_array, columns=continuous_features)
 print("c")
 
 # Ottengo la predizione per l'istanza selezionata
-prediction = ModelWrapper(model).predict(instance)
+instance_tensor = torch.tensor(instance_array, dtype=torch.float32)
+prediction = ModelWrapper(model).predict(instance_tensor)
 print(f"Predizione per l'istanza di test: {prediction}")
 
 # Inizializzo il generatore di controfattuali
@@ -143,8 +154,24 @@ counterfactuals_1 = exp.generate_counterfactuals(instance, total_CFs=1, desired_
 # Visualizzo i controfattuali
 counterfactuals_1.visualize_as_dataframe()
 
+# Confronto i valori dell'istanza originale e del controfattuale
+original_instance_array = np.squeeze(matrix_test[0].todense())
+counterfactual_instance_array = counterfactuals_1.cf_data.values[0]  # Assumendo che ci sia solo un controfattuale
+
+changes = []
+for i, (orig_val, cf_val) in enumerate(zip(original_instance_array, counterfactual_instance_array)):
+    if orig_val != cf_val:
+        feature_name = continuous_features[i]
+        changes.append((feature_name, orig_val, cf_val))
+
+# Stampa i risultati
+print("Caratteristiche con valori cambiati:")
+for feature_name, orig_val, cf_val in changes:
+    print(f"Caratteristica: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
+
 end_time = time.time()
 print(f"Tempo di esecuzione: {end_time - start_time} secondi")
+
 
 def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
     class ModelWrapper:
@@ -219,4 +246,3 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
 
     # Visualizzo i controfattuali
     counterfactuals_1.visualize_as_dataframe()
-

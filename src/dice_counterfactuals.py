@@ -128,7 +128,7 @@ exp = dice_ml.Dice(data, dice_model, method="random")
 # Itero su tutte le righe di matrix_test (tutti i documenti)
 for i in range(matrix_test.shape[0]):
 
-    instance_array = np.squeeze(matrix_test[i].todense()).flatten()
+    instance_array = np.squeeze(np.asarray(matrix_test[0].todense())).reshape(-1)
     print(f"Generazione controfattuale per l'istanza {i}...")
 
     # Creo dataframe per istanza
@@ -142,17 +142,18 @@ for i in range(matrix_test.shape[0]):
     # Genero controfattuali per l'istanza i-esima
     counterfactuals = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
 
-    counterfactual_df = counterfactuals.visualize_as_dataframe()
-    print(counterfactual_df)
+    counterfactuals.visualize_as_dataframe()
+
 
     # Confronto i valori dell'istanza originale e del controfattuale
     counterfactual_instance_array = counterfactuals.cf_examples_list[0].final_cfs_df.to_numpy()[0].flatten()
     changes = []
 
-    for j, (orig_val, cf_val) in enumerate(zip(instance_array, counterfactual_instance_array)):
+    for j, (orig_val, cf_val) in enumerate(zip(instance_array.ravel(), counterfactual_instance_array)):
         if orig_val != cf_val:
             feature_name = continuous_features[j]
             changes.append((feature_name, orig_val, cf_val))
+
 
     # Stampo i risultati
     print(f"Features modificate per l'istanza {i}:")

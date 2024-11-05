@@ -159,7 +159,7 @@ for i in range(matrix_test.shape[0]):
     for feature_name, orig_val, cf_val in changes:
         print(f"Feature: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
 
-print("Generazione dei controfattuali completata per tutte le istanze.")
+print("Generazione dei controfattuali completata")
 
 
 end_time = time.time()

@@ -132,7 +132,7 @@ for i in range(matrix_test.shape[0]):
     print(f"Generazione controfattuale per l'istanza {i}...")
 
     # Creo dataframe per istanza
-    instance = pd.DataFrame([instance_array], columns=continuous_features)
+    instance = pd.DataFrame(instance_array, columns=continuous_features)
 
 
     instance_tensor = torch.tensor(instance_array, dtype=torch.float32)
@@ -225,7 +225,7 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
         print(f"Generazione controfattuale per l'istanza {i}...")
 
         # Creo dataframe per istanza
-        instance = pd.DataFrame([instance_array], columns=continuous_features)
+        instance = pd.DataFrame(instance_array, columns=continuous_features)
 
         instance_tensor = torch.tensor(instance_array, dtype=torch.float32)
         prediction = ModelWrapper(model).predict(instance_tensor)

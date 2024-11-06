@@ -1,4 +1,5 @@
 import dice_ml
+import csv
 import torch
 import pickle
 import numpy as np
@@ -6,6 +7,7 @@ import pandas as pd
 from neural_network import NeuralNetwork
 from load_file import load_file_jsonl
 import time
+from collections import defaultdict
 
 start_time = time.time()
 
@@ -124,6 +126,8 @@ dice_model = dice_ml.Model(model=ModelWrapper(model), backend="PYT")
 # Inizializzo il generatore di controfattuali
 exp = dice_ml.Dice(data, dice_model, method="random")
 
+feature_modif_count = defaultdict(int)
+
 # Itero su tutte le righe di matrix_test (tutti i documenti)
 for i in range(matrix_test.shape[0]):
 
@@ -152,6 +156,9 @@ for i in range(matrix_test.shape[0]):
             feature_name = continuous_features[j]
             changes.append((feature_name, orig_val, cf_val))
 
+            # Conto quante volte ogni feature viene modificata
+            feature_modif_count[feature_name] += 1
+
 
     # Stampo i risultati
     print(f"Features modificate per l'istanza {i}:")
@@ -160,6 +167,13 @@ for i in range(matrix_test.shape[0]):
 
 print("Generazione dei controfattuali completata")
 
+with open("feature_modif_count.csv", mode="w", newline="") as csv_file:
+    writer = csv.writer(csv_file)
+    writer.writerow(["Feature", "Modification count"])
+    for feature, count in feature_modif_count.items():
+        writer.writerow([feature, count])
+
+print("Conteggio modifiche salvato in feature_modif_count.csv")
 
 end_time = time.time()
 print(f"Tempo di esecuzione: {end_time - start_time} secondi")
@@ -217,10 +231,12 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
     # Inizializzo il generatore di controfattuali
     exp = dice_ml.Dice(data, dice_model, method="random")
 
+    feature_modif_count = defaultdict(int)
+
     # Itero su tutte le righe di matrix_test (tutti i documenti)
     for i in range(matrix_test.shape[0]):
 
-        instance_array = np.squeeze(matrix_test[i].todense()).flatten()
+        instance_array = np.squeeze((np.asarray(matrix_test[i].todense()))).reshape(1, -1)
         print(f"Generazione controfattuale per l'istanza {i}...")
 
         # Creo dataframe per istanza
@@ -233,17 +249,19 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
         # Genero controfattuali per l'istanza i-esima
         counterfactuals = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
 
-        counterfactual_df = counterfactuals.visualize_as_dataframe()
-        print(counterfactual_df)
+        counterfactuals.visualize_as_dataframe()
 
         # Confronto i valori dell'istanza originale e del controfattuale
         counterfactual_instance_array = counterfactuals.cf_examples_list[0].final_cfs_df.to_numpy()[0].flatten()
         changes = []
 
-        for j, (orig_val, cf_val) in enumerate(zip(instance_array, counterfactual_instance_array)):
+        for j, (orig_val, cf_val) in enumerate(zip(instance_array.ravel(), counterfactual_instance_array)):
             if orig_val != cf_val:
                 feature_name = continuous_features[j]
                 changes.append((feature_name, orig_val, cf_val))
+
+                # Conto quante volte ogni feature viene modificata
+                feature_modif_count[feature_name] += 1
 
         # Stampo i risultati
         print(f"Features modificate per l'istanza {i}:")
@@ -251,3 +269,12 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
             print(f"Feature: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
 
     print("Generazione dei controfattuali completata")
+
+    with open("feature_modif_count.csv", mode="w", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["Feature", "Modification count"])
+        for feature, count in feature_modif_count.items():
+            writer.writerow([feature, count])
+
+    print("Conteggio modifiche salvato in feature_modif_count.csv")
+

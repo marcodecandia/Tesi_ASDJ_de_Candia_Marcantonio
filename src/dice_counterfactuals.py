@@ -13,22 +13,18 @@ start_time = time.time()
 
 # Carico il vocabolario globale
 vocabulary_path = '../data/movies/vocabulary/vocabulary.txt'
-
 with open(vocabulary_path, 'r') as f:
     vocabulary_global = [line.strip() for line in f.readlines()]
 
 vocabulary_len = len(vocabulary_global)
-print(vocabulary_len)
+print(f"Lunghezza del vocabolario: {vocabulary_len}")
 
 # Inizializzo il modello
 model = NeuralNetwork(vocabulary_len)
 model.load_state_dict(torch.load("model.pth", weights_only=True))
 model.eval()
 
-# Filtro le feature per escludere "outcome"
-#vocabulary_global = [feature for feature in vocabulary_global if feature != 'outcome']
-
-# Carica matrix_train e matrix_test da file pickle
+# Carico matrix_train e matrix_test da file pickle
 with open("../data/movies/matrix_train.pkl", "rb") as f:
     matrix_train = pickle.load(f)
 
@@ -84,24 +80,13 @@ categorical_features = []
 # Carico le etichette (outcome)
 train_labels = load_file_jsonl("../data/movies/train.jsonl")
 
-# Carico documenti e trasformo in matrici di frequenze
-#matrix_train, _ = one_hot_encoder_document("../data/movies/train_docs", vocabulary_global)
-#matrix_test, _ = one_hot_encoder_document("../data/movies/test_docs", vocabulary_global)
-
-array_test = [matrix_test[0].todense()]
-
-print(matrix_train.shape)
-print(matrix_test.shape)
-print([matrix_test[0].todense()])
-#print(continuous_features.shape)
-
 # Assicuro che il numero di etichette corrisponda ai documenti
 train_labels = train_labels[:matrix_train.shape[0]]
 
 # Creo un DataFrame dei dati di training
 data_df = pd.DataFrame(matrix_train.todense(), columns=continuous_features)
 
-# Aggiungo la colonna target "outcome"
+# Aggiungo la colonna target "_outcome_"
 data_df["_outcome_"] = np.array(train_labels, dtype=np.float64)
 print(f"Numero di colonne nel dataframe con l\'outcome: {len(data_df.columns)}")
 
@@ -115,18 +100,92 @@ if missing_features:
 else:
     print("Tutte le feature sono correttamente presenti nel DataFrame.")
 
+cinema_features = [
+    "actor", "actress", "director", "screenplay", "script", "cinematography", "editing",
+    "sound", "soundtrack", "lighting", "costume", "makeup", "production", "camera",
+    "shot", "frame", "scene", "sequence", "visual", "cgi", "animation",
+    "studio", "release", "premiere", "trailer", "crew", "cast",
+    "dub", "subtitle", "dialogue", "role", "protagonist", "antagonist",
+    "plot", "climax", "narrative", "theme", "symbolism", "adaptation", "remake",
+    "sequel", "trilogy", "franchise", "series", "budget",
+    "award", "festival", "oscar", "nomination", "critic", "rating", "score", "review",
+    "audience", "classic", "masterpiece", "indie", "mainstream", "blockbuster",
+    "opening", "closing", "pacing", "tone", "mood"
+]
+
+adjectives = [
+    "amazing", "boring", "captivating", "stunning", "thrilling", "exciting", "dull",
+    "tedious", "fantastic", "brilliant", "iconic", "legendary", "mediocre",
+    "disappointing", "memorable", "intense", "emotional", "heartfelt", "powerful",
+    "weak", "strong", "funny", "humorous", "dark", "gritty",
+    "realistic", "surreal", "groundbreaking", "predictable", "unpredictable",
+    "original", "fresh", "stale", "innovative", "charming",
+    "beautiful", "ugly", "terrifying", "scary", "suspenseful", "uplifting",
+    "depressing", "romantic", "intense", "witty", "slow",
+    "fast", "complex", "simplistic", "raw", "refined", "polished", "harsh",
+    "pleasant", "nostalgic"
+]
+
+genre_themes = [
+    "horror", "thriller", "drama", "comedy", "action", "romance", "fantasy", "adventure", "mystery", "crime", "noir",
+    "biography", "historical", "documentary", "war", "western", "musical", "animation", "anime",
+    "family", "superhero", "survival", "disaster", "revenge", "justice",
+    "redemption", "friendship", "love", "death", "life", "betrayal", "corruption",
+    "freedom", "justice", "innocence", "conflict", "adventure", "journey",
+    "exploration", "humanity", "nature", "technology", "civilization", "rebellion",
+    "utopia", "mythology", "magic", "war", "hero", "villain", "antihero",
+    "sacrifice", "bravery", "power", "religion", "philosophy", "existential",
+    "moral", "society", "tradition", "culture"
+]
+
+actors_directors = [
+    "spielberg", "tarantino", "hitchcock", "scorsese", "nolan", "kubrick",
+    "coppola", "cameron", "ridley", "lucas", "zemeckis", "burton", "fincher",
+    "bigelow", "coen", "lynch", "carpenter", "allen",
+    "streep", "pacino", "depp", "dicaprio", "hathaway", "winslet", "kidman",
+    "pitt", "clooney", "roberts", "lawrence", "damon", "williams", "mcconaughey",
+    "johansson", "hanks", "swinton", "mirren", "watson",
+    "watts", "gyllenhaal", "bale", "hardy", "redford", "harrison", "bullock",
+    "dench"
+]
+
+descriptive_terms = [
+    "masterpiece", "hit", "flop", "success", "failure", "thrilling", "suspenseful",
+    "entertaining", "engrossing", "hilarious", "heartbreaking", "touching", "inspiring",
+    "amusing", "shocking", "disturbing", "haunting", "majestic", "spectacular",
+    "disappointing", "lifeless", "timeless", "forgettable", "overrated", "underrated",
+    "immersive", "vivid", "surreal", "sharp", "edgy", "raw", "classic", "groundbreaking",
+    "innovative", "stale", "refreshing", "bold", "ambitious", "modest", "engaging",
+    "relatable", "flawed", "perfect", "cheesy", "melodramatic", "authentic", "visionary",
+    "experimental", "straightforward", "complex", "layered",
+    "cinematic", "aesthetic", "philosophical", "ambiguous", "symbolic",
+    "metaphorical"
+]
+
+selected_features = cinema_features + adjectives + genre_themes + actors_directors + descriptive_terms
+
+missing_features_1 = set(selected_features) - set(continuous_features)
+if missing_features_1:
+    print(f"Alcune feature sono nel selected ma non continuous")
+    print(missing_features_1)
+else:
+    print("Tutte le feature sono correttamente presenti nel DataFrame.")
+
+# Configurazione per DiCE
 data = dice_ml.Data(dataframe=data_df,
                     continuous_features=continuous_features,
                     categorical_features=categorical_features,
                     outcome_name="_outcome_")
 
-# Definisco modello per DiCE
 dice_model = dice_ml.Model(model=ModelWrapper(model), backend="PYT")
 
-# Inizializzo il generatore di controfattuali
 exp = dice_ml.Dice(data, dice_model, method="random")
 
-feature_modif_count = defaultdict(int)
+# Dizionari per contare aumenti e diminuzioni in base all'outcome
+feature_increase_count = defaultdict(int)
+feature_decrease_count = defaultdict(int)
+feature_changes_0_to_1 = defaultdict(lambda: {"increase": 0, "decrease": 0})
+feature_changes_1_to_0 = defaultdict(lambda: {"increase": 0, "decrease": 0})
 
 # Itero su tutte le righe di matrix_test (tutti i documenti)
 for i in range(matrix_test.shape[0]):
@@ -135,45 +194,79 @@ for i in range(matrix_test.shape[0]):
     print(f"Generazione controfattuale per l'istanza {i}...")
 
     # Creo dataframe per istanza
-    instance = pd.DataFrame(instance_array, columns=continuous_features)
-
+    instance_df = pd.DataFrame(instance_array, columns=continuous_features)
 
     instance_tensor = torch.tensor(instance_array, dtype=torch.float32)
     prediction = ModelWrapper(model).predict(instance_tensor)
+
+    if isinstance(prediction, np.ndarray):
+        prediction = prediction[0]
+
+    outcome = int(prediction >= 0.5)
     print(f"Predizione per l'istanza {i}: {prediction}")
 
     # Genero controfattuali per l'istanza i-esima
-    counterfactuals = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
+    try:
+        # Generazione dei controfattuali
+        counterfactuals = exp.generate_counterfactuals(
+            instance_df,
+            total_CFs=1,
+            desired_class="opposite",
+            features_to_vary=selected_features,
+            sparsity_weight=0.8
+        )
 
-    counterfactuals.visualize_as_dataframe()
+        counterfactuals.visualize_as_dataframe()
 
-    # Confronto i valori dell'istanza originale e del controfattuale
-    counterfactual_instance_array = counterfactuals.cf_examples_list[0].final_cfs_df.to_numpy()[0].flatten()
-    changes = []
+        # Continua con il resto del codice per tracciare le modifiche
+        if outcome == 0:
+            change_dict = feature_changes_0_to_1
+        elif outcome == 1:
+            change_dict = feature_changes_1_to_0
 
-    for j, (orig_val, cf_val) in enumerate(zip(instance_array.ravel(), counterfactual_instance_array)):
-        if orig_val != cf_val:
-            feature_name = continuous_features[j]
-            changes.append((feature_name, orig_val, cf_val))
+        counterfactual_instance_array = counterfactuals.cf_examples_list[0].final_cfs_df.to_numpy()[0].flatten()
+        changes = []
 
-            # Conto quante volte ogni feature viene modificata
-            feature_modif_count[feature_name] += 1
+        for j, (orig_val, cf_val) in enumerate(zip(instance_array.ravel(), counterfactual_instance_array)):
+            if orig_val != cf_val:
+                feature_name = continuous_features[j]
+                changes.append((feature_name, orig_val, cf_val))
+                if cf_val > orig_val:
+                    feature_increase_count[feature_name] += 1
+                    change_dict[feature_name]["increase"] += 1
+                else:
+                    feature_decrease_count[feature_name] += 1
+                    change_dict[feature_name]["decrease"] += 1
 
+        # Stampa delle feature modificate
+        print(f"Features modificate per l'istanza {i}:")
+        for feature_name, orig_val, cf_val in changes:
+            print(f"Feature: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
 
-    # Stampo i risultati
-    print(f"Features modificate per l'istanza {i}:")
-    for feature_name, orig_val, cf_val in changes:
-        print(f"Feature: {feature_name}, Valore originale: {orig_val}, Nuovo valore: {cf_val}")
+    except Exception as e:
+        print(f"Eccezione per l'istanza {i}: {e}")
+        print("Salto questa istanza e proseguo con la successiva")
+
 
 print("Generazione dei controfattuali completata")
 
-with open("feature_modif_count.csv", mode="w", newline="") as csv_file:
+# Salvataggio dei risultati in CSV
+with open("feature_changes.csv", mode="w", newline="") as csv_file:
     writer = csv.writer(csv_file)
-    writer.writerow(["Feature", "Modification count"])
-    for feature, count in feature_modif_count.items():
-        writer.writerow([feature, count])
+    writer.writerow(["Feature", "Increase count", "Decrease count", "Increase (0->1)", "Decrease (0->1)", "Increase (1->0)", "Decrease (1->0)"])
+    for feature in continuous_features:
+        if feature_increase_count[feature] > 0 or feature_decrease_count[feature] > 0:
+            writer.writerow([
+                feature,
+                feature_increase_count[feature],
+                feature_decrease_count[feature],
+                feature_changes_0_to_1[feature]["increase"],
+                feature_changes_0_to_1[feature]["decrease"],
+                feature_changes_1_to_0[feature]["increase"],
+                feature_changes_1_to_0[feature]["decrease"]
+            ])
 
-print("Conteggio modifiche salvato in feature_modif_count.csv")
+print("Conteggio modifiche salvato in feature_changes.csv")
 
 end_time = time.time()
 print(f"Tempo di esecuzione: {end_time - start_time} secondi")
@@ -224,12 +317,11 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
                         categorical_features=categorical_features,
                         outcome_name="_outcome_")
 
-
     # Definisco modello per DiCE
     dice_model = dice_ml.Model(model=ModelWrapper(model), backend="PYT")
 
     # Inizializzo il generatore di controfattuali
-    exp = dice_ml.Dice(data, dice_model, method="random")
+    exp = dice_ml.Dice(data, dice_model, method="genetic")
 
     feature_modif_count = defaultdict(int)
 
@@ -247,7 +339,8 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
         print(f"Predizione per l'istanza {i}: {prediction}")
 
         # Genero controfattuali per l'istanza i-esima
-        counterfactuals = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite")
+        counterfactuals = exp.generate_counterfactuals(instance, total_CFs=1, desired_class="opposite",
+                                                       sparsity_weight=0.8)
 
         counterfactuals.visualize_as_dataframe()
 
@@ -270,11 +363,10 @@ def dice_counterfactuals(model, vocabulary_global, matrix_train, matrix_test):
 
     print("Generazione dei controfattuali completata")
 
-    with open("feature_modif_count.csv", mode="w", newline="") as csv_file:
+    with open("feature_modif_count_1.csv", mode="w", newline="") as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow(["Feature", "Modification count"])
         for feature, count in feature_modif_count.items():
             writer.writerow([feature, count])
 
-    print("Conteggio modifiche salvato in feature_modif_count.csv")
-
+    print("Conteggio modifiche salvato in feature_modif_count_1.csv")

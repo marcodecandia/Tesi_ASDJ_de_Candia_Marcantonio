@@ -1,9 +1,7 @@
 import spacy
 import numpy as np
 from Tesi_ASDJ.src.load_file import load_file_jsonl, load_file_txt, load_directory_txt
-import os
-from scipy.sparse import lil_matrix, csr_matrix
-from collections import defaultdict
+
 
 # Carico il modello di Spacy (lingua inglese small)
 nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
@@ -32,13 +30,6 @@ def one_hot_encoder(file):
         matrix[i, token_index] = 1
 
     return matrix, vocabulary
-
-
-#esempio
-#text_path = '../../Include/data/movies/movies_union_human_perf.jsonl'
-#text_ent, vocab = one_hot_encoder(text_path)
-#print(vocab)
-#print(text_ent)
 
 
 def one_hot_encoder_txt(text_raw):

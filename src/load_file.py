@@ -33,11 +33,6 @@ def load_file_txt(file_path):
 
     return text_str
 
-
-#Esempio per vedeer se effettivamente mi restituisce una stringa
-#file = load_file_jsonl('../../Include/data/movies/movies_union_human_perf.jsonl')
-#print(type(file))
-
 def load_directory_txt(directory_path):
     data = ""
     try:

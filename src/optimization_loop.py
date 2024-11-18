@@ -1,6 +1,5 @@
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
-import matplotlib.pyplot as plt
 
 
 def train_loop(dataloader, model, loss_fn, optimizer, batch_size):

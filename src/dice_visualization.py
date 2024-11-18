@@ -12,9 +12,9 @@ feature_modif["Total changes"] = feature_modif[["Increase count", "Decrease coun
 
 colors = {
     'Increase (0->1)': '#006400',  # Verde scuro
-    'Decrease (1->0)': '#90EE90',  # Verde chiaro
+    'Decrease (1->0)': '#FF7F7F',  # Verde chiaro
     'Increase (1->0)': '#8B0000',  # Rosso scuro
-    'Decrease (0->1)': '#FF7F7F'   # Rosso chiaro
+    'Decrease (0->1)': '#90EE90'   # Rosso chiaro
 }
 
 # Seleziono le 20 feature con più modifiche
